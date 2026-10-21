@@ -80,21 +80,54 @@ final class B2BW_Pricing {
             wp_enqueue_script( 'wc-enhanced-select' );
             wp_enqueue_style( 'woocommerce_admin_styles' );
         }
-        wp_add_inline_script( 'wc-enhanced-select', "jQuery(function($){
-            function b2bwToggleTarget(){
+        wp_add_inline_script( 'wc-enhanced-select', "jQuery(function($) {
+            function b2bwToggleTarget() {
                 var type = $('#b2bw-rule-type').val();
+
+                // Kategorie / obiekty
                 $('.b2bw-category-target').toggle(type === 'category');
-                $('.b2bw-object-target').toggle(type !== 'category');
-                $('#b2bw-pricing-type option[value=percent]').prop('disabled', false);
+                $('.b2bw-object-target').toggle(type === 'product');
+                $('.b2bw-variant-target').toggle(type === 'variation');
+
                 if(type === 'category') {
+                    $('.b2bw-object-target').val('');
+                    $('.b2bw-variant-target').val('');
+                }
+                if(type === 'product') {
+                    $('.b2bw-variant-target').val('');
+                    $('.b2bw-category-target').val('');
+                }
+                if(type === 'variation') {
+                    $('.b2bw-object-target').val('');
+                    $('.b2bw-category-target').val('');
+                }
+                    
+                // Rodzaj ceny
+                $('#b2bw-pricing-type option[value=percent]').prop('disabled', false);
+
+                if (type === 'category') {
                     $('#b2bw-pricing-type option[value=fixed]').prop('disabled', true);
-                    if($('#b2bw-pricing-type').val() === 'fixed') $('#b2bw-pricing-type').val('percent');
+
+                    if ($('#b2bw-pricing-type').val() === 'fixed') {
+                        $('#b2bw-pricing-type').val('percent');
+                    }
                 } else {
                     $('#b2bw-pricing-type option[value=fixed]').prop('disabled', false);
                 }
-                $('#b2bw-pricing-value').attr('max', $('#b2bw-pricing-type').val() === 'percent' ? '100' : '');
+
+                $('#b2bw-pricing-value').attr(
+                    'max',
+                    $('#b2bw-pricing-type').val() === 'percent' ? '100' : ''
+                );
             }
-            $('#b2bw-rule-type, #b2bw-pricing-type').on('change', b2bwToggleTarget); b2bwToggleTarget();
+
+            // Zmiana zakresu reguły
+            $('#b2bw-rule-type').on('change', b2bwToggleTarget);
+
+            // Zmiana rodzaju ceny
+            $('#b2bw-pricing-type').on('change', b2bwToggleTarget);
+
+            b2bwToggleTarget();
         });" );
     }
 
@@ -269,14 +302,19 @@ final class B2BW_Pricing {
             self::redirect_notice( 0, 'WooCommerce nie jest aktywne.', 'error' );
         }
         global $wpdb;
+        
         $account_id = isset( $_POST['account_id'] ) ? absint( $_POST['account_id'] ) : 0;
         $type = isset( $_POST['rule_type'] ) ? sanitize_key( wp_unslash( $_POST['rule_type'] ) ) : '';
         $pricing_type = isset( $_POST['pricing_type'] ) ? sanitize_key( wp_unslash( $_POST['pricing_type'] ) ) : '';
         // Dla kategorii ID pochodzi z osobnego selecta; dla produktu z wyszukiwarki WooCommerce.
         if ( 'category' === $type ) {
             $object_id = isset( $_POST['category_object_id'] ) ? absint( $_POST['category_object_id'] ) : 0;
+        } else if ('product' === $type) {
+            $object_id = isset($_POST['product_object_id']) ? absint($_POST['product_object_id']) : 0;
+        } else if ('variation' === $type) {
+            $object_id = isset($_POST['variant_object_id']) ? absint($_POST['variant_object_id']) : 0;
         } else {
-            $object_id = isset( $_POST['object_id'] ) ? absint( $_POST['object_id'] ) : 0;
+            $object_id = null;
         }
         $value_raw = isset( $_POST['pricing_value'] ) ? wc_format_decimal( wp_unslash( $_POST['pricing_value'] ) ) : '';
         $accounts_table = $wpdb->prefix . 'b2bw_accounts';
@@ -380,7 +418,43 @@ final class B2BW_Pricing {
                     <?php wp_nonce_field( 'b2bw_save_price_rule' ); ?>
                     <table class="form-table" role="presentation">
                         <tr><th scope="row"><label for="b2bw-rule-type">Zakres reguły</label></th><td><select id="b2bw-rule-type" name="rule_type"><option value="product">Produkt (także wariantowy)</option><option value="variation">Konkretny wariant</option><option value="category">Kategoria produktów</option></select></td></tr>
-                        <tr class="b2bw-object-target"><th scope="row"><label for="b2bw-object-product">Produkt</label></th><td><select id="b2bw-object-product" class="wc-product-search" name="object_id" data-placeholder="Wyszukaj produkt lub wariant…" data-action="woocommerce_json_search_products_and_variations" data-allow_clear="true" style="width: 400px;"><option value=""></option></select><p class="description">Wybierz produkt lub wariant z podpowiedzi. Dla zakresu „Produkt” wybierz produkt nadrzędny lub prosty; dla zakresu „Konkretny wariant” wybierz wariant.</p></td></tr>
+                        <tr class="b2bw-object-target">
+                            <th scope="row">
+                                <label for="b2bw-object-product">Produkt</label>
+                            </th>
+                            <td>
+                                <select
+                                    id="b2bw-object-product"
+                                    class="wc-product-search"
+                                    name="product_object_id"
+                                    data-placeholder="Wyszukaj produkt..."
+                                    data-action="b2bw_json_search_products_only"
+                                    data-allow_clear="true"
+                                    style="width: 400px;"
+                                >
+                                    <option value=""></option>
+                                </select>
+                            </td>
+                        </tr>
+
+                        <tr class="b2bw-variant-target">
+                            <th scope="row">
+                                <label for="b2bw-object-variant">Wariant</label>
+                            </th>
+                            <td>
+                                <select
+                                    id="b2bw-object-variant"
+                                    class="wc-product-search"
+                                    name="variant_object_id"
+                                    data-placeholder="Wyszukaj wariant..."
+                                    data-action="b2bw_json_search_variations_only"
+                                    data-allow_clear="true"
+                                    style="width: 400px;"
+                                >
+                                    <option value=""></option>
+                                </select>
+                            </td>
+                        </tr>
                         <tr class="b2bw-category-target"><th scope="row"><label for="b2bw-object-category">Kategoria</label></th><td><?php wp_dropdown_categories( array( 'taxonomy' => 'product_cat', 'name' => 'category_object_id', 'id' => 'b2bw-object-category', 'hide_empty' => false, 'show_option_none' => 'Wybierz kategorię', 'option_none_value' => '0', 'hierarchical' => true ) ); ?></td></tr>
                         <tr><th scope="row"><label for="b2bw-pricing-type">Rodzaj ceny</label></th><td><select id="b2bw-pricing-type" name="pricing_type"><option value="percent">Rabat procentowy</option><option value="fixed">Cena stała</option></select></td></tr>
                         <tr><th scope="row"><label for="b2bw-pricing-value">Wartość</label></th><td><input id="b2bw-pricing-value" name="pricing_value" type="number" min="0" max="100" step="0.01" required><p class="description">Rabat: 0–100%. Cena stała: kwota w walucie sklepu. Cena stała jest dostępna dla produktu prostego i konkretnego wariantu. Dla produktu wariantowego użyj rabatu procentowego lub ustaw ceny osobno dla wariantów.</p></td></tr>
