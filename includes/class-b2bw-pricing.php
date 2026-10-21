@@ -62,8 +62,8 @@ final class B2BW_Pricing {
     public static function register_admin_menu() {
         add_submenu_page(
             'b2bw-accounts',
-            __( 'Ceny preferencyjne B2B', 'b2b-woocommerce' ),
-            __( 'Ceny preferencyjne', 'b2b-woocommerce' ),
+            __( 'Ceny dla Klientów B2B', 'b2b-woocommerce' ),
+            __( 'Ceny dla Klientów B2B', 'b2b-woocommerce' ),
             'manage_woocommerce',
             self::PAGE_SLUG,
             array( __CLASS__, 'render_admin_page' )
@@ -101,7 +101,7 @@ final class B2BW_Pricing {
                     $('.b2bw-object-target').val('');
                     $('.b2bw-category-target').val('');
                 }
-                    
+
                 // Rodzaj ceny
                 $('#b2bw-pricing-type option[value=percent]').prop('disabled', false);
 
@@ -398,7 +398,7 @@ final class B2BW_Pricing {
         $message = isset( $_GET['b2bw_message'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['b2bw_message'] ) ) ) : '';
         ?>
         <div class="wrap">
-            <h1>Ceny preferencyjne B2B</h1>
+            <h1>Ceny dla Klientów B2B</h1>
             <?php if ( $message ) : ?><div class="notice <?php echo 'error' === $notice ? 'notice-error' : 'notice-success'; ?> is-dismissible"><p><?php echo esc_html( $message ); ?></p></div><?php endif; ?>
             <p>Reguły cenowe są przypisane do konta B2B. Rabaty procentowe liczone są od ceny regularnej. Cena B2B zastępuje cenę promocyjną.</p>
             <?php if ( empty( $accounts ) ) : ?>
@@ -406,17 +406,27 @@ final class B2BW_Pricing {
             <?php else : ?>
                 <form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
                     <input type="hidden" name="page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>">
-                    <label for="b2bw-account-select"><strong>Kontrahent:</strong></label>
-                    <select id="b2bw-account-select" name="b2bw_account" onchange="this.form.submit()">
-                        <?php foreach ( $accounts as $account ) : ?><option value="<?php echo esc_attr( $account->id ); ?>" <?php selected( $selected_account, $account->id ); ?>><?php echo esc_html( $account->name ); ?></option><?php endforeach; ?>
-                    </select>
+                    <table class="form-table b2bw-form-table" role="presentation">
+                        <tbody>
+                            <tr>
+                                <th scope="row">
+                                    <label for="b2bw-account-select"><strong>Kontrahent:</strong></label>
+                                </th>
+                                <td>
+                                    <select id="b2bw-account-select" name="b2bw_account" onchange="this.form.submit()">
+                                        <?php foreach ( $accounts as $account ) : ?><option value="<?php echo esc_attr( $account->id ); ?>" <?php selected( $selected_account, $account->id ); ?>><?php echo esc_html( $account->name ); ?></option><?php endforeach; ?>
+                                    </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </form>
                 <h2>Dodaj lub zaktualizuj regułę</h2>
                 <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
                     <input type="hidden" name="action" value="b2bw_save_price_rule">
                     <input type="hidden" name="account_id" value="<?php echo esc_attr( $selected_account ); ?>">
                     <?php wp_nonce_field( 'b2bw_save_price_rule' ); ?>
-                    <table class="form-table" role="presentation">
+                    <table class="form-table b2bw-form-table" role="presentation">
                         <tr><th scope="row"><label for="b2bw-rule-type">Zakres reguły</label></th><td><select id="b2bw-rule-type" name="rule_type"><option value="product">Produkt (także wariantowy)</option><option value="variation">Konkretny wariant</option><option value="category">Kategoria produktów</option></select></td></tr>
                         <tr class="b2bw-object-target">
                             <th scope="row">

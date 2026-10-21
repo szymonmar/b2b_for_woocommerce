@@ -1,7 +1,7 @@
 B2B dla WooCommerce
 ===================
 
-Wersja: 0.2.1
+Wersja: 0.2.2 [BETA]
 Wymagania: WordPress 6.2+, PHP 7.4+, WooCommerce
 
 Instalacja

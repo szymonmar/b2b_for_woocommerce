@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: B2B dla WooCommerce
- * Description: Podstawowe zarządzanie kontami B2B i regułami przypisywania adresów e-mail.
- * Version: 0.2.1
+ * Description: Narzędzie do zarządzania sprzedazą B2B w WooCommerce - ceny hurtowe dla klientów B2B
+ * Version: 0.2.2
  * Requires at least: 6.2
  * Requires PHP: 7.4
- * Author: Własna wtyczka
+ * Author: Szymon Marszałek
  * Text Domain: b2b-woocommerce
  */
 
@@ -99,4 +99,23 @@ function b2bw_json_search_objects($mode) {
     }
 
     wp_send_json($results);
+}
+
+add_action('admin_enqueue_scripts', 'b2bw_enqueue_admin_styles');
+
+function b2bw_enqueue_admin_styles($hook) {
+    // Opcjonalnie: ładuj CSS tylko na stronie swojej wtyczki.
+    if (
+        !isset($_GET['page']) ||
+        $_GET['page'] !== 'b2bw-pricing'
+    ) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'b2bw-admin-style',
+        plugin_dir_url(__FILE__) . 'assets/css/b2bw-style.css',
+        [], 
+        '1.0.0'
+    );
 }

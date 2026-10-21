@@ -1,0 +1,29 @@
+/* Ujednolicenie szerokości tabeli formularza */
+.b2bw-form-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+/* Jednakowa szerokość kolumn */
+.b2bw-form-table th {
+    width: 200px;
+}
+
+.b2bw-form-table td {
+    width: auto;
+}
+
+/* Jednakowa szerokość pól formularza */
+.b2bw-form-table input[type="text"],
+.b2bw-form-table input[type="number"],
+.b2bw-form-table select:not(.wc-product-search) {
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+
+/* Pola wyszukiwania produktów i wariantów (Select2) */
+.b2bw-form-table .select2-container {
+    width: 100% !important;
+    max-width: 400px;
+}
