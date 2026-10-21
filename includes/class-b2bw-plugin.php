@@ -10,6 +10,9 @@ final class B2BW_Plugin {
         add_action( 'admin_menu', array( __CLASS__, 'register_admin_menu' ) );
         add_action( 'admin_post_b2bw_save_account', array( __CLASS__, 'handle_save_account' ) );
         add_action( 'admin_post_b2bw_delete_account', array( __CLASS__, 'handle_delete_account' ) );
+        if ( class_exists( 'B2BW_Pricing' ) ) {
+            B2BW_Pricing::init();
+        }
     }
 
     private static function accounts_table() {
@@ -60,6 +63,10 @@ final class B2BW_Plugin {
             KEY account_id (account_id),
             KEY email (email)
         ) {$charset_collate};" );
+
+        if ( class_exists( 'B2BW_Pricing' ) ) {
+            B2BW_Pricing::activate();
+        }
     }
 
     public static function register_admin_menu() {
@@ -179,6 +186,7 @@ final class B2BW_Plugin {
         if ( $id > 0 ) {
             $wpdb->delete( self::domains_table(), array( 'account_id' => $id ), array( '%d' ) );
             $wpdb->delete( self::emails_table(), array( 'account_id' => $id ), array( '%d' ) );
+            $wpdb->delete( $wpdb->prefix . 'b2bw_price_rules', array( 'account_id' => $id ), array( '%d' ) );
             $wpdb->delete( self::accounts_table(), array( 'id' => $id ), array( '%d' ) );
         }
         self::redirect_with_notice( 'success', 'Konto B2B zostało usunięte.' );
