@@ -395,7 +395,7 @@ final class B2BW_Pricing {
         }
         if ( ! $selected_exists ) { $selected_account = ! empty( $accounts ) ? (int) $accounts[0]->id : 0; }
         $notice = isset( $_GET['b2bw_notice'] ) ? sanitize_key( $_GET['b2bw_notice'] ) : '';
-        $message = isset( $_GET['b2bw_message'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['b2bw_message'] ) ) ) : '';
+        $message = (isset( $_GET['b2bw_message'] ) && is_string( $_GET['b2bw_message'] )) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['b2bw_message'] ) ) ) : '';
         ?>
         <div class="wrap">
             <h1>Ceny dla Klientów B2B</h1>

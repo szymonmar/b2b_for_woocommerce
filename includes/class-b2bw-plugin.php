@@ -219,7 +219,7 @@ final class B2BW_Plugin {
         $account = $edit_id ? self::get_account( $edit_id ) : null;
         $accounts = $wpdb->get_results( 'SELECT * FROM ' . self::accounts_table() . ' ORDER BY name ASC' );
         $notice = isset( $_GET['b2bw_notice'] ) ? sanitize_key( $_GET['b2bw_notice'] ) : '';
-        $message = isset( $_GET['b2bw_message'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['b2bw_message'] ) ) ) : '';
+        $message = (isset( $_GET['b2bw_message'] ) && is_string( $_GET['b2bw_message'] )) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['b2bw_message'] ) ) ) : '';
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'Klienci B2B', 'b2b-woocommerce' ); ?></h1>

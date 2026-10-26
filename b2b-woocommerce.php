@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'B2BW_VERSION', '0.2.1' );
+define( 'B2BW_VERSION', '0.2.3' );
 define( 'B2BW_FILE', __FILE__ );
 define( 'B2BW_PATH', plugin_dir_path( __FILE__ ) );
 
@@ -116,6 +116,6 @@ function b2bw_enqueue_admin_styles($hook) {
         'b2bw-admin-style',
         plugin_dir_url(__FILE__) . 'assets/css/b2bw-style.css',
         [], 
-        '1.0.0'
+        B2BW_VERSION
     );
 }

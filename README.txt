@@ -1,13 +1,13 @@
 B2B dla WooCommerce
 ===================
 
-Wersja: 0.2.2 [BETA]
+Wersja: 0.2.3 [BETA]
 Wymagania: WordPress 6.2+, PHP 7.4+, WooCommerce
 
 Instalacja
 1. W panelu WordPress przejdź do Wtyczki -> Dodaj nową -> Wyślij wtyczkę na serwer.
 2. Wybierz archiwum b2b-woocommerce.zip i aktywuj wtyczkę.
-3. W menu administracyjnym pojawi się pozycja „Klienci B2B” oraz podmenu „Ceny preferencyjne”.
+3. W menu administracyjnym pojawi się pozycja „Klienci B2B” oraz podmenu „Ceny dla Klientów B2B.
 
 Konta B2B
 - tworzenie, edycja i usuwanie kont B2B;
