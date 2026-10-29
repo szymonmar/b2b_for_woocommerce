@@ -3,7 +3,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-/** Preferencyjne ceny B2B i ich obsługa w WooCommerce. */
+/** 
+ * Individual B2B product prices in WooCommerce - pricing rules control panel & front-end rendering
+ */
 final class B2BW_Pricing {
     const PAGE_SLUG = 'b2bw-pricing';
 
@@ -15,6 +17,7 @@ final class B2BW_Pricing {
         add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
         add_action( 'admin_post_b2bw_save_price_rule', array( __CLASS__, 'handle_save_rule' ) );
         add_action( 'admin_post_b2bw_delete_price_rule', array( __CLASS__, 'handle_delete_rule' ) );
+        add_action( 'b2bw_before_product_price',    array( __CLASS__, 'render_price_information' ), 10, 1 );
 
         add_filter( 'woocommerce_product_get_price', array( __CLASS__, 'filter_price' ), 99, 2 );
         add_filter( 'woocommerce_product_variation_get_price', array( __CLASS__, 'filter_price' ), 99, 2 );
@@ -24,13 +27,79 @@ final class B2BW_Pricing {
         add_filter( 'woocommerce_variation_prices_price', array( __CLASS__, 'filter_variation_price' ), 99, 3 );
         add_filter( 'woocommerce_variation_prices_regular_price', array( __CLASS__, 'filter_variation_regular_price' ), 99, 3 );
         add_filter( 'woocommerce_get_variation_prices_hash', array( __CLASS__, 'variation_prices_hash' ), 99, 3 );
+
     }
 
+
+    /**
+     * Returns the fully prefixed database table name used to store B2B pricing rules.
+     *
+     * @return string The prefixed pricing rules table name.
+     */
     private static function rules_table() {
         global $wpdb;
         return $wpdb->prefix . 'b2bw_price_rules';
     }
 
+    
+    /**
+     * Renders the "Individual price" label when the current customer has a preferential price.
+     *
+     * For variable products, collects the IDs of variations with preferential prices
+     * and outputs a single label containing those IDs as a JSON-encoded data attribute.
+     * For other product types, displays the label if a preferential price is available.
+     *
+     * @param WC_Product $product The product to check.
+     * @return void
+     */
+    public static function render_price_information( $product ) {
+        if ( ! $product instanceof WC_Product ) {
+            return;
+        }
+
+        // Produkt wariantowy.
+        if ( $product->is_type( 'variable' ) ) {
+            $preferential_variation_ids = [];
+
+            foreach ( $product->get_children() as $variation_id ) {
+                $variation = wc_get_product( $variation_id );
+
+                if ( ! $variation instanceof WC_Product_Variation ) {
+                    continue;
+                }
+
+                if ( null !== self::get_preferential_price( $variation ) ) {
+                    $preferential_variation_ids[] = absint( $variation_id );
+                }
+            }
+
+            if ( ! empty( $preferential_variation_ids ) ) {
+                printf(
+                    '<div class="b2b-price-info-wrapper"><span class="b2b-price-info" data-variation-ids="%s" style="display: none;">Cena indywidualna</span></div>',
+                    esc_attr( wp_json_encode( $preferential_variation_ids ) )
+                );
+            }
+            return;
+        } else {
+            $preferential = self::get_preferential_price( $product );
+
+            if ( null !== $preferential ) {
+                echo '<div class="b2b-price-info-wrapper"><span class="b2b-price-info">Cena indywidualna</span></div>';
+            }
+
+            return;
+        }
+    }
+
+
+    /**
+     * Creates or updates the database table used to store B2B pricing rules.
+     *
+     * Defines the table structure, indexes, and unique constraints, then updates
+     * the stored database schema version.
+     *
+     * @return void
+     */
     public static function activate() {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -53,12 +122,29 @@ final class B2BW_Pricing {
         update_option( 'b2bw_db_version', '0.2.0' );
     }
 
+
+    /**
+     * Checks whether the database schema needs to be upgraded.
+     *
+     * Compares the stored schema version with the required version and runs
+     * the activation routine if an upgrade is necessary.
+     *
+     * @return void
+     */
     public static function maybe_upgrade() {
         if ( version_compare( (string) get_option( 'b2bw_db_version', '0.1.0' ), '0.2.0', '<' ) ) {
             self::activate();
         }
     }
 
+
+    /**
+     * Registers the B2B pricing submenu in the WordPress administration menu.
+     *
+     * Restricts access to users with the manage_woocommerce capability.
+     *
+     * @return void
+     */
     public static function register_admin_menu() {
         add_submenu_page(
             'b2bw-accounts',
@@ -70,6 +156,17 @@ final class B2BW_Pricing {
         );
     }
 
+
+    /**
+     * Loads the scripts and styles required by the B2B pricing administration page.
+     *
+     * Enqueues WooCommerce enhanced product selectors and registers inline JavaScript
+     * for toggling rule fields and adjusting available pricing options according
+     * to the selected rule type and pricing method.
+     *
+     * @param string $hook The current administration page hook suffix.
+     * @return void
+     */
     public static function enqueue_admin_assets( $hook ) {
         // Hook suffix może zależeć od sluga menu nadrzędnego; parametr page jest jednoznaczny.
         if ( ! isset( $_GET['page'] ) || self::PAGE_SLUG !== sanitize_key( wp_unslash( $_GET['page'] ) ) ) {
@@ -131,6 +228,16 @@ final class B2BW_Pricing {
         });" );
     }
 
+
+    /**
+     * Retrieves B2B account IDs associated with an email address.
+     *
+     * Checks for an exact email match first. If no exact match is found, searches
+     * for accounts associated with the email's domain. Returns unique account IDs.
+     *
+     * @param string $email The email address to look up.
+     * @return int[] An array of matching account IDs.
+     */
     private static function get_account_ids_for_email( $email ) {
         global $wpdb;
         $email = strtolower( trim( (string) $email ) );
@@ -149,6 +256,16 @@ final class B2BW_Pricing {
         return array_values( array_unique( array_map( 'absint', $matches ) ) );
     }
 
+
+    /**
+     * Determines the B2B account associated with the currently logged-in user.
+     *
+     * Uses the user's email address to find matching accounts and caches the result
+     * for the current request. Returns an account ID only when exactly one account
+     * matches; otherwise, returns zero.
+     *
+     * @return int The matching B2B account ID, or zero if no unique match exists.
+     */
     public static function get_current_account_id() {
         $user_id = get_current_user_id();
         if ( ! $user_id ) {
@@ -168,6 +285,13 @@ final class B2BW_Pricing {
         return self::$account_cache[ $user_id ];
     }
 
+
+    /**
+     * Retrieves and caches all pricing rules assigned to a B2B account.
+     *
+     * @param int $account_id The B2B account ID.
+     * @return array The pricing rules associated with the account.
+     */
     private static function get_account_rules( $account_id ) {
         global $wpdb;
         if ( ! isset( self::$rules_cache[ $account_id ] ) ) {
@@ -176,6 +300,15 @@ final class B2BW_Pricing {
         return self::$rules_cache[ $account_id ];
     }
 
+
+    /**
+     * Finds a pricing rule matching a specific rule type and object ID.
+     *
+     * @param array  $rules     The pricing rules to search.
+     * @param string $type      The rule type to match.
+     * @param int    $object_id The product, variation, or category ID.
+     * @return object|null The matching rule, or null if no rule is found.
+     */
     private static function find_rule( $rules, $type, $object_id ) {
         foreach ( $rules as $rule ) {
             if ( $type === $rule->rule_type && (int) $object_id === (int) $rule->object_id ) {
@@ -185,6 +318,19 @@ final class B2BW_Pricing {
         return null;
     }
 
+
+    /**
+     * Calculates a preferential price using a pricing rule.
+     *
+     * Supports percentage discounts applied to the regular price and fixed prices.
+     * Returns null if the rule is missing, the regular price is invalid, or the
+     * pricing type is unsupported. The resulting price is clamped to zero or above
+     * and formatted using the store's configured price precision.
+     *
+     * @param string|float $regular_price The product's regular price.
+     * @param object|null  $rule          The pricing rule to apply.
+     * @return float|null The calculated preferential price, or null if unavailable.
+     */
     private static function apply_rule( $regular_price, $rule ) {
         if ( null === $rule || '' === $regular_price || ! is_numeric( $regular_price ) ) {
             return null;
@@ -202,7 +348,17 @@ final class B2BW_Pricing {
         return (float) wc_format_decimal( $price, wc_get_price_decimals() );
     }
 
-    /** Zwraca cenę B2B albo null, jeśli nie ma pasującej reguły. */
+
+    /**
+     * Determines the preferential price for a product or variation.
+     *
+     * Resolves the current customer's B2B account and applies the matching pricing
+     * rules in priority order: variation, parent product, then product categories.
+     * When multiple category rules match, returns the lowest calculated price.
+     *
+     * @param WC_Product $product The product or variation to evaluate.
+     * @return float|null The preferential price, or null if no applicable rule exists.
+     */
     public static function get_preferential_price( $product ) {
         if ( ! $product instanceof WC_Product ) {
             return null;
@@ -247,45 +403,124 @@ final class B2BW_Pricing {
         return $best_price;
     }
 
+
+    /**
+     * Filters the WooCommerce product price to apply the customer's preferential price.
+     *
+     * @param string     $price   The original product price.
+     * @param WC_Product $product The product being priced.
+     * @return string The preferential price if available, otherwise the original price.
+     */
     public static function filter_price( $price, $product ) {
         $preferential = self::get_preferential_price( $product );
         return null !== $preferential ? (string) $preferential : $price;
     }
 
+
+    /**
+     * Filters the WooCommerce regular price to reflect the customer's preferential price.
+     *
+     * @param string     $price   The original regular price.
+     * @param WC_Product $product The product being priced.
+     * @return string The preferential price if available, otherwise the original price.
+     */
     public static function filter_regular_price( $price, $product ) {
         $preferential = self::get_preferential_price( $product );
         return null !== $preferential ? (string) $preferential : $price;
     }
 
+
+    /**
+     * Prevents a product from being marked as on sale when a preferential B2B price applies.
+     *
+     * @param bool       $on_sale Whether WooCommerce considers the product to be on sale.
+     * @param WC_Product $product The product being evaluated.
+     * @return bool False if a preferential price applies; otherwise, the original sale status.
+     */
     public static function filter_is_on_sale( $on_sale, $product ) {
         return null !== self::get_preferential_price( $product ) ? false : $on_sale;
     }
 
+
+    /**
+     * Filters a variation's price to apply the customer's preferential price.
+     *
+     * @param float            $price     The original variation price.
+     * @param WC_Product       $variation The variation being priced.
+     * @param WC_Product|false $parent    The parent variable product.
+     * @return float The preferential price if available, otherwise the original price.
+     */
     public static function filter_variation_price( $price, $variation, $parent ) {
         $preferential = self::get_preferential_price( $variation );
         return null !== $preferential ? $preferential : $price;
     }
 
+
+    /**
+     * Filters a variation's regular price to reflect the customer's preferential price.
+     *
+     * @param float            $price     The original regular variation price.
+     * @param WC_Product       $variation The variation being priced.
+     * @param WC_Product|false $parent    The parent variable product.
+     * @return float The preferential price if available, otherwise the original price.
+     */
     public static function filter_variation_regular_price( $price, $variation, $parent ) {
         $preferential = self::get_preferential_price( $variation );
         return null !== $preferential ? $preferential : $price;
     }
 
+
+    /**
+     * Adds the current B2B account ID to WooCommerce's variation price cache hash.
+     *
+     * Ensures that variation price data is cached separately for different B2B accounts.
+     *
+     * @param array      $hash         The existing variation price cache hash.
+     * @param WC_Product $product      The variable product being processed.
+     * @param bool       $for_display  Whether prices are being prepared for display.
+     * @return array The updated cache hash.
+     */
     public static function variation_prices_hash( $hash, $product, $for_display ) {
         $hash['b2bw_account_id'] = self::get_current_account_id();
         return $hash;
     }
 
+
+    /**
+     * Retrieves all B2B accounts, ordered alphabetically by account name.
+     *
+     * @return array The list of B2B accounts.
+     */
     private static function get_accounts() {
         global $wpdb;
         return $wpdb->get_results( 'SELECT id, name FROM ' . $wpdb->prefix . 'b2bw_accounts ORDER BY name ASC' );
     }
 
+
+    /**
+     * Retrieves all pricing rules assigned to a specific B2B account.
+     *
+     * Orders the rules by rule type and object ID for consistent administration display.
+     *
+     * @param int $account_id The B2B account ID.
+     * @return array The pricing rules assigned to the account.
+     */
     private static function get_rules_for_account( $account_id ) {
         global $wpdb;
         return $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . self::rules_table() . ' WHERE account_id = %d ORDER BY rule_type, object_id', $account_id ) );
     }
 
+
+    /**
+     * Generates a human-readable label for a pricing rule's target object.
+     *
+     * Returns the category name or product name together with its ID. If the
+     * referenced category or product no longer exists, returns a descriptive
+     * label indicating the missing object.
+     *
+     * @param object $rule The pricing rule whose target object should be labelled.
+     * @return string The target object's label.
+     */
     private static function object_label( $rule ) {
         if ( 'category' === $rule->rule_type ) {
             $term = get_term( (int) $rule->object_id, 'product_cat' );
@@ -295,6 +530,17 @@ final class B2BW_Pricing {
         return $product ? $product->get_name() . ' (ID ' . (int) $rule->object_id . ')' : 'Nieistniejący produkt (ID ' . (int) $rule->object_id . ')';
     }
 
+
+    /**
+     * Validates and saves a B2B pricing rule submitted from the administration page.
+     *
+     * Checks permissions and the request nonce, validates the account, rule type,
+     * target object, and pricing values, then inserts a new rule or updates an
+     * existing rule for the same account, rule type, and object. Clears the rules
+     * cache and redirects with a status notice.
+     *
+     * @return void
+     */
     public static function handle_save_rule() {
         self::require_permission();
         check_admin_referer( 'b2bw_save_price_rule' );
@@ -360,6 +606,15 @@ final class B2BW_Pricing {
         self::redirect_notice( $account_id, 'Reguła cenowa została zapisana.', 'success' );
     }
 
+
+    /**
+     * Deletes a B2B pricing rule after verifying permissions and the request nonce.
+     *
+     * Restricts deletion to the specified rule and account, clears the rules cache,
+     * and redirects to the administration page with a status notice.
+     *
+     * @return void
+     */
     public static function handle_delete_rule() {
         self::require_permission();
         $rule_id = isset( $_GET['rule_id'] ) ? absint( $_GET['rule_id'] ) : 0;
@@ -373,18 +628,50 @@ final class B2BW_Pricing {
         self::redirect_notice( $account_id, 'Reguła cenowa została usunięta.', 'success' );
     }
 
+
+    /**
+     * Verifies that the current user can manage B2B pricing rules.
+     *
+     * Terminates execution with an error message if the user lacks the
+     * manage_woocommerce capability.
+     *
+     * @return void
+     */
     private static function require_permission() {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
             wp_die( esc_html__( 'Nie masz uprawnień do zarządzania cenami B2B.', 'b2b-woocommerce' ) );
         }
     }
 
+
+    /**
+     * Redirects to the B2B pricing administration page with a status notice.
+     *
+     * Adds the selected account ID, notice type, and message to the redirect URL,
+     * then terminates execution.
+     *
+     * @param int    $account_id The B2B account ID to select after redirection.
+     * @param string $message    The notice message to display.
+     * @param string $type       The notice type, such as success or error.
+     * @return void
+     */
     private static function redirect_notice( $account_id, $message, $type ) {
         $args = array( 'page' => self::PAGE_SLUG, 'b2bw_account' => absint( $account_id ), 'b2bw_notice' => $type, 'b2bw_message' => rawurlencode( $message ) );
         wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
         exit;
     }
 
+    
+    /**
+     * Renders the B2B pricing administration page.
+     *
+     * Loads the available accounts and pricing rules, validates the selected account,
+     * displays status notices, and renders the forms for creating or updating rules
+     * and the table of existing rules. Requires the appropriate WooCommerce
+     * administration capability.
+     *
+     * @return void
+     */
     public static function render_admin_page() {
         self::require_permission();
         $accounts = self::get_accounts();

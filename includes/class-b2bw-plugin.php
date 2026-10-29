@@ -3,9 +3,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+
 final class B2BW_Plugin {
     const PAGE_SLUG = 'b2bw-accounts';
 
+    /**
+     * Initializes the plugin by registering admin actions and initializing the pricing module when available.
+     */
     public static function init() {
         add_action( 'admin_menu', array( __CLASS__, 'register_admin_menu' ) );
         add_action( 'admin_post_b2bw_save_account', array( __CLASS__, 'handle_save_account' ) );
@@ -15,21 +19,33 @@ final class B2BW_Plugin {
         }
     }
 
+    /**
+     * Returns the fully prefixed database table name used to store B2B accounts.
+     */
     private static function accounts_table() {
         global $wpdb;
         return $wpdb->prefix . 'b2bw_accounts';
     }
 
+    /**
+     * Returns the fully prefixed database table name used to store account domains.
+     */
     private static function domains_table() {
         global $wpdb;
         return $wpdb->prefix . 'b2bw_account_domains';
     }
 
+    /**
+     * Returns the fully prefixed database table name used to store explicitly assigned email addresses.
+     */
     private static function emails_table() {
         global $wpdb;
         return $wpdb->prefix . 'b2bw_account_emails';
     }
 
+    /**
+     * Creates the database tables required by the plugin and initializes the pricing module.
+     */
     public static function activate() {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -69,6 +85,9 @@ final class B2BW_Plugin {
         }
     }
 
+    /**
+     * Registers the B2B accounts management page in the WordPress admin menu.
+     */
     public static function register_admin_menu() {
         add_menu_page(
             __( 'Klienci B2B', 'b2b-woocommerce' ),
@@ -81,12 +100,23 @@ final class B2BW_Plugin {
         );
     }
 
+    /**
+     * Checks whether the current user has permission to manage WooCommerce settings and terminates execution if not.
+     */
     private static function require_permission() {
         if ( ! current_user_can( 'manage_woocommerce' ) ) {
             wp_die( esc_html__( 'Nie masz uprawnień do zarządzania klientami B2B.', 'b2b-woocommerce' ) );
         }
     }
 
+    /**
+     * Normalizes and validates a list of domains provided as a string.
+     *
+     * Accepts entries separated by newlines, commas, or semicolons. Removes protocols, supported trailing path patterns, and leading at signs. Returns a unique array of lowercase domains or a WP_Error if a domain is invalid.
+     * 
+     * @param string $raw list of domains spearated by newlines, commas or semicolons
+     * @return array validated and normalized domains
+     */
     private static function normalize_domains( $raw ) {
         $items = preg_split( '/[\r\n,;]+/', (string) $raw );
         $domains = array();
@@ -107,6 +137,14 @@ final class B2BW_Plugin {
         return array_values( array_unique( $domains ) );
     }
 
+    /**
+     * Normalizes and validates a list of email addresses provided as a string.
+     *
+     * Accepts entries separated by newlines, commas, or semicolons. Converts addresses to lowercase, removes duplicates, and returns a WP_Error if an address is invalid.
+     * 
+     * @param string $raw list of email addresses spearated by newlines, commas or semicolons
+     * @return array validated and normalized email addresses
+     */
     private static function normalize_emails( $raw ) {
         $items = preg_split( '/[\r\n,;]+/', (string) $raw );
         $emails = array();
@@ -123,6 +161,11 @@ final class B2BW_Plugin {
         return array_values( array_unique( $emails ) );
     }
 
+    /**
+     * Creates a new B2B account or updates an existing one.
+     *
+     * Validates user permissions and the request nonce, sanitizes submitted data, validates domains and email addresses, saves the account, and replaces its associated domain and email assignments. Redirects back to the admin page with a status notice.
+     */
     public static function handle_save_account() {
         self::require_permission();
         check_admin_referer( 'b2bw_save_account' );
@@ -178,6 +221,11 @@ final class B2BW_Plugin {
         self::redirect_with_notice( 'success', 'Konto B2B zostało zapisane.' );
     }
 
+    /**
+     * Deletes a B2B account and its associated domains, email assignments, and pricing rules.
+     *
+     * Verifies user permissions and the request nonce before deleting the records, then redirects to the admin page with a status notice.
+     */
     public static function handle_delete_account() {
         self::require_permission();
         $id = isset( $_GET['account_id'] ) ? absint( $_GET['account_id'] ) : 0;
@@ -192,6 +240,13 @@ final class B2BW_Plugin {
         self::redirect_with_notice( 'success', 'Konto B2B zostało usunięte.' );
     }
 
+    /**
+     * Redirects to the B2B accounts admin page with a status notice and an optional account ID for editing.
+     *
+     * @param string $type    The notice type, such as 'success' or 'error'.
+     * @param string $message The message to display after the redirect.
+     * @param int    $edit_id Optional account ID to reopen in the edit form.
+     */
     private static function redirect_with_notice( $type, $message, $edit_id = 0 ) {
         $args = array( 'page' => self::PAGE_SLUG, 'b2bw_notice' => $type, 'b2bw_message' => rawurlencode( $message ) );
         if ( $edit_id ) {
@@ -201,6 +256,12 @@ final class B2BW_Plugin {
         exit;
     }
 
+    /**
+     * Retrieves a B2B account by ID, including its associated domains and email addresses.
+     *
+     * @param int $id The account ID.
+     * @return stdClass|null The account object with domains and emails, or null if the account does not exist.
+ */
     private static function get_account( $id ) {
         global $wpdb;
         $account = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::accounts_table() . ' WHERE id = %d', $id ) );
@@ -212,6 +273,12 @@ final class B2BW_Plugin {
         return $account;
     }
 
+
+    /**
+     * Renders the B2B accounts administration page.
+     *
+     * Displays status notices, the account creation or editing form, and a table of existing accounts with edit and delete actions.
+     */
     public static function render_admin_page() {
         self::require_permission();
         global $wpdb;

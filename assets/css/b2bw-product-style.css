@@ -1,0 +1,14 @@
+div.b2b-price-info-wrapper {
+    min-height: 1lh;
+}
+
+span.b2b-price-info {
+    font-size: 18px;
+    font-weight: bold;
+    color: #9e0404;
+}
+
+div.hide-wrapper {
+    min-height: 0 !important;
+    display: none !important;
+}
