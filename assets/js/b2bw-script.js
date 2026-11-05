@@ -44,6 +44,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const timeout = 5000;
 
     const interval = setInterval(function () {
+        const input = document.querySelector('input[name="variation_id"]');         // Variation id input field
+
+        if (!input) {
+            return;
+        }
+        
         const id = input.value;
 
         if (id && id !== '0') {

@@ -1,215 +1,240 @@
-# B2B dla WooCommerce
+# B2B for WooCommerce
 
-**Wersja:** 1.0.0  
-**Wymagania:** WordPress 6.2 lub nowszy, PHP 7.4 lub nowszy, WooCommerce  
+**Version:** 1.0.1
+
+**Requirements:** WordPress 6.2 or later, PHP 7.4 or later, WooCommerce
+
 **Text Domain:** `b2b-woocommerce`
 
-## Opis
+## Description
 
-**B2B dla WooCommerce** umożliwia definiowanie kont kontrahentów B2B i przypisywanie im indywidualnych reguł cenowych. Ceny są wyliczane na podstawie ceny regularnej produktu lub konkretnego wariantu, a następnie udostępniane przez mechanizmy cenowe WooCommerce.
+**B2B for WooCommerce** allows you to define B2B customer accounts and assign individual pricing rules to them. Prices are calculated based on the regular price of a product or a specific variation and then applied through WooCommerce pricing mechanisms.
 
-Wtyczka pozwala między innymi na:
+The plugin provides the following features:
 
-- przypisywanie klientów do kont B2B na podstawie adresu e-mail lub domeny;
-- ustawianie rabatów procentowych i cen stałych;
-- definiowanie reguł dla produktów, wariantów i kategorii;
-- rozstrzyganie konfliktów pomiędzy pasującymi regułami według określonego priorytetu;
-- wyświetlanie informacji **„Cena indywidualna”** na stronie produktu;
-- współpracę z wtyczką **Lowest Price History** w zakresie etykiety dotyczącej najniższej ceny z 30 dni.
+- Assigning customers to B2B accounts based on email addresses or email domains;
+- Setting percentage discounts and fixed prices;
+- Defining pricing rules for products, variations, and product categories;
+- Resolving conflicts between matching rules according to a predefined priority;
+- Displaying a **"Individual Price"** label on product pages;
+- Integration with **Lowest Price History** for handling the 30-day lowest price label.
 
-Wtyczka nie zmienia zapisanych w katalogu cen produktów — ceny preferencyjne są stosowane dynamicznie dla rozpoznanego klienta B2B.
+The plugin does not modify product prices stored in the catalog. Preferential prices are applied dynamically for recognized B2B customers.
 
-## Spis treści
+## Table of Contents
 
-- [Wymagania](#wymagania)
-- [Instalacja](#instalacja)
-- [Konfiguracja kont B2B](#konfiguracja-kont-b2b)
-- [Konfiguracja cen preferencyjnych](#konfiguracja-cen-preferencyjnych)
-- [Zasady naliczania cen](#zasady-naliczania-cen)
-- [Rozpoznawanie konta B2B](#rozpoznawanie-konta-b2b)
-- [Informacja „Cena indywidualna”](#informacja-cena-indywidualna)
-- [Integracja z Lowest Price History](#integracja-z-lowest-price-history)
-- [Struktura danych](#struktura-danych)
-- [Odinstalowanie](#odinstalowanie)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [B2B Account Configuration](#b2b-account-configuration)
+- [Preferential Pricing Configuration](#preferential-pricing-configuration)
+- [Pricing Rules](#pricing-rules)
+- [B2B Account Recognition](#b2b-account-recognition)
+- [Individual Price Label](#individual-price-label)
+- [Lowest Price History Integration](#lowest-price-history-integration)
+- [Data Structure](#data-structure)
+- [Permissions](#permissions)
+- [Uninstallation](#uninstallation)
+- [Changelog](#changelog)
 
-## Wymagania
+## Requirements
 
-- WordPress 6.2 lub nowszy;
-- PHP 7.4 lub nowszy;
-- aktywna wtyczka WooCommerce.
+- WordPress 6.2 or later;
+- PHP 7.4 or later;
+- WooCommerce plugin installed and activated.
 
-Integracja etykiety Omnibus wymaga dodatkowo wtyczki **Lowest Price History**. Bez niej podstawowe funkcje kont B2B i reguł cenowych pozostają niezależne od tej integracji.
+The Omnibus label integration additionally requires the **Lowest Price History** plugin. Without it, the core B2B account and pricing rule functionality remains fully independent.
 
-## Instalacja
+## Installation
 
-1. Zaloguj się do panelu administracyjnego WordPress.
-2. Przejdź do **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer**.
-3. Wybierz archiwum `b2b-woocommerce.zip`.
-4. Zainstaluj archiwum i aktywuj wtyczkę.
-5. W menu administracyjnym pojawi się sekcja **Klienci B2B** oraz podmenu **Ceny dla Klientów B2B**.
+1. Log in to your WordPress administration panel.
+2. Navigate to **Plugins → Add New → Upload Plugin**.
+3. Select the `b2b-woocommerce.zip` archive.
+4. Install and activate the plugin.
+5. The **B2B Customers** section and the **B2B Customer Pricing** submenu will appear in the administration menu.
 
-Przed aktualizacją lub instalacją na sklepie produkcyjnym zalecane jest wykonanie kopii zapasowej plików i bazy danych.
+Before installing or updating the plugin on a production store, it is recommended to create a backup of your files and database.
 
-## Konfiguracja kont B2B
+## B2B Account Configuration
 
-Konta konfiguruje się w panelu WordPress w sekcji **Klienci B2B**. Każde konto ma nazwę oraz listę domen i konkretnych adresów e-mail, które pozwalają przypisać zalogowanego użytkownika do kontrahenta.
+B2B accounts are managed in the WordPress administration panel under **B2B Customers**. Each account has a name and a list of domains and specific email addresses used to assign logged-in users to the corresponding business account.
 
-### Dodawanie konta
+### Adding an Account
 
-1. Otwórz **Klienci B2B**.
-2. Dodaj konto i wpisz jego nazwę, np. nazwę firmy lub kontrahenta.
-3. W polu domen wpisz domeny przypisane do konta, np. `firma.pl`.
-4. W polu adresów e-mail wpisz adresy, które mają być przypisane bezpośrednio do konta, np. `zakupy@firma.pl`.
-5. Zapisz konto.
+1. Open **B2B Customers**.
+2. Add a new account and enter its name, such as the company or contractor name.
+3. Enter the domains assigned to the account, e.g. `company.com`.
+4. Enter specific email addresses that should be directly assigned to the account, e.g. `purchasing@company.com`.
+5. Save the account.
 
-W polach domen i adresów e-mail można podać wiele wartości — każdą w osobnym wierszu lub oddzieloną przecinkiem albo średnikiem. Domeny należy wpisywać bez protokołu i ścieżki, np. `firma.pl`, a nie `https://firma.pl/sklep`.
+Multiple values can be entered in the domain and email address fields. Each value can be placed on a separate line or separated by a comma or semicolon.
 
-Przypisanie domeny oznacza, że konto może obejmować różnych użytkowników logujących się adresami z tej domeny. Należy dodawać wyłącznie domeny, których przypisanie do kontrahenta jest zamierzone.
+Domains should be entered without a protocol or path, e.g. `company.com` rather than `https://company.com/shop`.
 
-### Edycja i usuwanie
+Assigning a domain means that the account can include multiple users logging in with email addresses belonging to that domain. Only add domains that are intentionally assigned to the given business account.
 
-W sekcji **Klienci B2B** można edytować dane konta lub je usunąć. Reguły cenowe są przypisane do identyfikatora konta. Przed usunięciem konta sprawdź, czy nie jest ono nadal potrzebne do obsługi kontrahenta.
+### Editing and Deleting Accounts
 
-## Konfiguracja cen preferencyjnych
+Accounts can be edited or deleted in the **B2B Customers** section.
 
-Reguły konfiguruje się w **Klienci B2B → Ceny dla Klientów B2B**.
+Pricing rules are associated with the account ID. Before deleting an account, make sure it is no longer required for managing the corresponding customer.
 
-### Dodawanie reguły
+## Preferential Pricing Configuration
 
-1. Wybierz konto B2B, dla którego ma obowiązywać reguła.
-2. Wybierz **Zakres reguły**:
-   - **Produkt (także wariantowy)** — reguła dla produktu; rabat procentowy obejmuje również jego warianty;
-   - **Konkretny wariant** — reguła tylko dla wskazanego wariantu;
-   - **Kategoria produktów** — reguła dla produktów należących do wskazanej kategorii.
-3. Wybierz produkt, wariant lub kategorię, zależnie od zakresu reguły.
-4. Wybierz **Rodzaj ceny**:
-   - **Rabat procentowy** — procent rabatu liczony od ceny regularnej;
-   - **Cena stała** — konkretna cena w walucie sklepu.
-5. Wpisz wartość i zapisz regułę.
+Pricing rules are configured under **B2B Customers → B2B Customer Pricing**.
 
-Po zapisaniu reguła pojawi się na liście obowiązujących reguł dla wybranego konta. Istniejącą regułę można usunąć z tej listy.
+### Adding a Pricing Rule
 
-### Dostępne typy reguł
+1. Select the B2B account for which the rule should apply.
+2. Select the **Rule Scope**:
+   - **Product (including variable products)** – applies a rule to a product. Percentage discounts also apply to its variations;
+   - **Specific Variation** – applies a rule only to the selected variation;
+   - **Product Category** – applies a rule to products belonging to the selected category.
+3. Select the product, variation, or category, depending on the selected scope.
+4. Select the **Price Type**:
+   - **Percentage Discount** – a percentage discount calculated from the regular price;
+   - **Fixed Price** – a specific price in the store currency.
+5. Enter the value and save the rule.
 
-| Zakres | Rabat procentowy | Cena stała |
+After saving, the rule will appear in the list of active rules for the selected account. Existing rules can be removed from this list.
+
+### Available Rule Types
+
+| Scope | Percentage Discount | Fixed Price |
 | --- | --- | --- |
-| Produkt prosty | Tak | Tak |
-| Produkt wariantowy jako całość | Tak — obejmuje warianty | Nie |
-| Konkretny wariant | Tak | Tak |
-| Kategoria produktów | Tak | Nie |
+| Simple Product | Yes | Yes |
+| Variable Product (entire product) | Yes – applies to variations | No |
+| Specific Variation | Yes | Yes |
+| Product Category | Yes | No |
 
-Cena stała dla produktu wariantowego jako całości nie jest dostępna, ponieważ poszczególne warianty mogą mieć różne ceny. Aby ustawić konkretną cenę dla danego wariantu, utwórz regułę typu **Konkretny wariant**.
+A fixed price cannot be assigned to an entire variable product because individual variations may have different prices. To set a specific price for a variation, create a **Specific Variation** rule.
 
-## Zasady naliczania cen
+## Pricing Rules
 
-### Kolejność reguł
+### Rule Priority
 
-Jeśli dla produktu pasuje więcej niż jedna reguła, stosowana jest reguła o wyższym priorytecie:
+If multiple rules match a product, the rule with the highest priority is applied:
 
-1. **Konkretny wariant** — najwyższy priorytet;
-2. **Produkt** — kolejny priorytet;
-3. **Kategoria produktów** — najniższy priorytet.
+1. **Specific Variation** – highest priority;
+2. **Product** – second priority;
+3. **Product Category** – lowest priority.
 
-Jeżeli pasuje kilka reguł kategorii, wtyczka wybiera najniższą obliczoną cenę.
+If multiple category rules match, the plugin selects the lowest calculated price.
 
-### Sposób obliczania ceny
+### Price Calculation
 
-- Rabat procentowy jest liczony od ceny regularnej produktu lub wariantu.
-- Cena stała określa bezpośrednio cenę preferencyjną.
-- Cena B2B zastępuje cenę promocyjną WooCommerce, jeśli dla danego produktu lub wariantu obowiązuje cena preferencyjna.
-- Ceny katalogowe zapisane w produkcie nie są nadpisywane przez wtyczkę.
-- Reguły i ceny wariantów są buforowane w ramach pojedynczego żądania. Hash cen wariantów uwzględnia konto B2B, aby ograniczyć ryzyko użycia bufora cen innego kontrahenta.
+- Percentage discounts are calculated based on the regular price of the product or variation.
+- A fixed price directly defines the preferential price.
+- The B2B price replaces the WooCommerce sale price whenever a preferential price applies to a product or variation.
+- Product catalog prices are not overwritten by the plugin.
+- Pricing rules and variation prices are cached within a single request. The variation price hash includes the B2B account ID to reduce the risk of using cached prices belonging to another customer account.
 
-## Rozpoznawanie konta B2B
+## B2B Account Recognition
 
-Ceny preferencyjne są stosowane na podstawie adresu e-mail **zalogowanego użytkownika**.
+Preferential prices are applied based on the email address of the **logged-in user**.
 
-Wtyczka sprawdza przypisanie w następującej kolejności:
+The plugin checks account assignments in the following order:
 
-1. Szuka dokładnego adresu e-mail na liście przypisanych adresów.
-2. Jeśli nie znajdzie dokładnego dopasowania, sprawdza domenę adresu e-mail.
-3. Jeśli dopasowanie wskazuje dokładnie jedno konto B2B, stosuje jego reguły cenowe.
-4. Jeśli dopasowanie wskazuje kilka kont, nie stosuje cen B2B — zapobiega to niejednoznacznemu przypisaniu kontrahenta.
+1. It looks for an exact match of the user's email address in the list of assigned addresses.
+2. If no exact match is found, it checks the email domain.
+3. If the match identifies exactly one B2B account, that account's pricing rules are applied.
+4. If the match identifies multiple accounts, no B2B prices are applied to prevent ambiguous account assignment.
 
-W praktyce oznacza to, że użytkownik musi zalogować się na konto WordPress/WooCommerce z adresem e-mail przypisanym do odpowiedniego konta B2B albo należącym do przypisanej domeny. Samo dodanie adresu lub domeny do konfiguracji nie tworzy konta użytkownika i nie loguje klienta automatycznie.
+In practice, the user must log in to their WordPress/WooCommerce account using an email address directly assigned to the relevant B2B account or belonging to one of its assigned domains.
 
-## Informacja „Cena indywidualna”
+Adding an email address or domain to the configuration does not create a WordPress user account or automatically log in the customer.
 
-Wtyczka udostępnia akcję WordPress:
+## Individual Price Label
+
+The plugin provides the following WordPress action:
 
 ```php
 do_action( 'b2bw_before_product_price', $product );
 ```
 
-Akcja wyświetla etykietę **„Cena indywidualna”**, gdy dla bieżącego produktu lub wariantu zalogowanego klienta istnieje cena preferencyjna.
+This action displays the **"Individual Price"** label when a preferential price exists for the current product or variation of the logged-in B2B customer.
 
-### Umieszczenie etykiety w szablonie produktu
+### Displaying the Label in the Product Template
 
-Aby wyświetlić informację w konkretnym miejscu strony produktu, dodaj wywołanie akcji w szablonie WooCommerce lub szablonie motywu potomnego. Przykładowo, bezpośrednio przed wyświetleniem ceny:
+To display the label in a specific location on the product page, add the action call to the WooCommerce template or your child theme template.
+
+For example, directly before displaying the product price:
 
 ```php
 <?php do_action( 'b2bw_before_product_price', $product ); ?>
+
 <strong><?php woocommerce_template_single_price(); ?></strong>
 ```
 
-W tym przykładzie `$product` powinien być obiektem aktualnego produktu WooCommerce. Jeśli motyw korzysta z własnego szablonu produktu, umieść wywołanie w odpowiednim miejscu tego szablonu. Zalecane jest wprowadzanie zmian w motywie potomnym, aby aktualizacja motywu nadrzędnego ich nie nadpisała.
+In this example, `$product` should be the WooCommerce object representing the current product.
 
-**Uwaga:** samo zarejestrowanie akcji przez wtyczkę nie gwarantuje wyświetlenia etykiety. Szablon musi wywołać `do_action( 'b2bw_before_product_price', $product )`.
+If your theme uses a custom product template, place the action call in the appropriate location within that template.
 
-### Produkty wariantowe
+It is recommended to make such changes in a child theme to prevent them from being overwritten during updates to the parent theme.
 
-Dla produktu wariantowego wtyczka przygotowuje pojedynczy element informacji i listę identyfikatorów wariantów objętych ceną indywidualną. Informacja jest pokazywana tylko wtedy, gdy wybrany wariant ma przypisaną cenę preferencyjną. Przy wyborze innego wariantu etykieta jest aktualizowana przez skrypt front-endowy wtyczki.
+**Important:** Registering the action in the plugin does not guarantee that the label will be displayed. The template must explicitly call `do_action( 'b2bw_before_product_price', $product )`.
 
-Dla produktu prostego etykieta jest wyświetlana, jeśli dla tego produktu istnieje cena preferencyjna.
+### Variable Products
 
-## Integracja z Lowest Price History
+For variable products, the plugin prepares a single label element and a list of variation IDs covered by individual pricing rules.
 
-Jeśli sklep korzysta z wtyczki **Lowest Price History**, integracja może zmienić etykietę informującą o najniższej cenie z 30 dni przed obniżką na **„Cena indywidualna”**, gdy dla bieżącego produktu lub wariantu obowiązuje cena preferencyjna B2B.
+The label is displayed only when the currently selected variation has an assigned preferential price. When another variation is selected, the label is updated by the plugin's front-end script.
 
-Dzięki temu na stronie produktu nie jest prezentowana standardowa etykieta Omnibus w miejscu, w którym powinna być widoczna informacja o indywidualnej cenie dla danego klienta.
+For simple products, the label is displayed whenever a preferential price exists for that product.
 
-### Ważne informacje
+## Lowest Price History Integration
 
-- Wtyczka **Lowest Price History** musi być zainstalowana i aktywna, aby działała jej część integracji.
-- Integracja etykiety nie zastępuje samodzielnie oceny obowiązków prawnych sprzedawcy związanych z prezentowaniem najniższej ceny przed obniżką.
-- Sposób prezentowania informacji powinien być sprawdzony na stronie produktu, w tym dla produktów wariantowych oraz dla użytkowników zalogowanych i niezalogowanych.
+If the store uses the **Lowest Price History** plugin, the integration can replace the label displaying the lowest price from 30 days before a price reduction with **"Individual Price"** whenever a preferential B2B price applies to the current product or variation.
 
-## Struktura danych
+This prevents the standard Omnibus label from being displayed in a location where information about the customer's individual price should be presented instead.
 
-Wtyczka tworzy własne tabele w bazie danych WordPress. Nazwy tabel uwzględniają prefiks instalacji:
+### Important Information
 
-- `{prefix}b2bw_accounts` — nazwy kont B2B oraz daty utworzenia i aktualizacji;
-- `{prefix}b2bw_account_domains` — domeny przypisane do kont;
-- `{prefix}b2bw_account_emails` — konkretne adresy e-mail przypisane do kont;
-- `{prefix}b2bw_price_rules` — reguły cenowe kont B2B.
+- The **Lowest Price History** plugin must be installed and activated for its integration functionality to work.
+- The label integration does not independently replace the seller's responsibility to assess legal obligations regarding the presentation of the lowest price before a reduction.
+- The presentation should be verified on product pages, including variable products and both logged-in and logged-out users.
 
-Wtyczka przechowuje również opcję wersji schematu bazy danych, wykorzystywaną do obsługi aktualizacji struktury.
+## Data Structure
 
-## Uprawnienia
+The plugin creates its own tables in the WordPress database. Table names use the installation's database prefix:
 
-Zarządzanie kontami B2B i regułami cenowymi jest dostępne dla użytkowników WordPress, którzy mają uprawnienie `manage_woocommerce`. Wyszukiwanie produktów i wariantów w formularzu administracyjnym dodatkowo sprawdza uprawnienie `edit_products`.
+- `{prefix}b2bw_accounts` – B2B account names and creation/update timestamps;
+- `{prefix}b2bw_account_domains` – domains assigned to accounts;
+- `{prefix}b2bw_account_emails` – specific email addresses assigned to accounts;
+- `{prefix}b2bw_price_rules` – B2B account pricing rules.
 
-## Odinstalowanie
+The plugin also stores a database schema version option, which is used to manage database structure updates.
 
-Podczas odinstalowania wtyczka usuwa własne tabele:
+## Permissions
+
+Managing B2B accounts and pricing rules is available to WordPress users with the `manage_woocommerce` capability.
+
+Product and variation searches in the administration forms additionally require the `edit_products` capability.
+
+## Uninstallation
+
+When the plugin is uninstalled, it removes its own database tables:
 
 - `{prefix}b2bw_price_rules`;
 - `{prefix}b2bw_account_emails`;
 - `{prefix}b2bw_account_domains`;
 - `{prefix}b2bw_accounts`;
 
-oraz opcję `b2bw_db_version`.
+It also removes the `b2bw_db_version` option.
 
-**Uwaga:** odinstalowanie jest operacją usuwającą dane konfiguracji wtyczki z bazy danych. Przed odinstalowaniem wykonaj kopię zapasową, jeśli chcesz zachować konta lub reguły cenowe.
+**Important:** Uninstallation permanently removes the plugin's configuration data from the database. Create a backup before uninstalling if you want to preserve your B2B accounts or pricing rules.
 
-## Informacje o wydaniu
+## Changelog
+
+### 1.0.1
+
+- Fixed a bug causing JavaScript console errors on product page.
 
 ### 1.0.0
 
-- zarządzanie kontami B2B i przypisaniami przez domeny oraz adresy e-mail;
-- reguły cenowe dla produktów, wariantów i kategorii;
-- priorytety reguł oraz wybór najniższej ceny przy wielu pasujących regułach kategorii;
-- dynamiczne stosowanie cen preferencyjnych przez mechanizmy WooCommerce;
-- etykieta „Cena indywidualna” na stronie produktu;
-- obsługa etykiety dla odpowiednich wariantów produktów;
-- integracja z Lowest Price History w zakresie etykiety Omnibus.
+- Added B2B account management with domain-based and email-based customer assignment;
+- Added pricing rules for products, variations, and categories;
+- Added rule priorities and lowest-price selection when multiple category rules match;
+- Added dynamic preferential pricing through WooCommerce pricing mechanisms;
+- Added the "Individual Price" label on product pages;
+- Added label support for applicable product variations;
+- Added integration with Lowest Price History for Omnibus label handling.
